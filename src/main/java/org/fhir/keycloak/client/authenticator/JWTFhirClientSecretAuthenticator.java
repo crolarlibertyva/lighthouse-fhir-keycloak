@@ -1,18 +1,11 @@
 package org.fhir.keycloak.client.authenticator;
 
-import java.security.PublicKey;
-import java.util.Arrays;
-
-import javax.ws.rs.core.MultivaluedMap;
-import javax.ws.rs.core.Response;
-
 import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
-import org.keycloak.OAuthErrorException;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
-import org.keycloak.authentication.authenticators.client.JWTClientAuthenticator;
+import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
@@ -24,11 +17,19 @@ import org.keycloak.representations.JsonWebToken;
 import org.keycloak.services.ServicesLogger;
 import org.keycloak.services.Urls;
 
-public class JwtFhirClientAuthenticator extends JWTClientAuthenticator {
-    private static final Logger logger = Logger.getLogger(JwtFhirClientAuthenticator.class);
+import javax.ws.rs.core.MultivaluedMap;
+import javax.ws.rs.core.Response;
+import java.util.Arrays;
+
+public class JWTFhirClientSecretAuthenticator extends JWTClientSecretAuthenticator {
+
+    private static final Logger logger = Logger.getLogger(JWTFhirClientSecretAuthenticator.class);
+
+    public static final String PROVIDER_ID = "fhir-client-secret-jwt";
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        logger.info("Authenticating client");
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
 
         String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);
@@ -95,10 +96,9 @@ public class JwtFhirClientAuthenticator extends JWTClientAuthenticator {
                 return;
             }
 
-            // Get client key and validate signature
-            PublicKey clientPublicKey = getSignatureValidationKey(client, context, jws);
-            if (clientPublicKey == null) {
-                // Error response already set to context
+            String clientSecretString = client.getSecret();
+            if (clientSecretString == null) {
+                context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, null);
                 return;
             }
 
@@ -108,24 +108,26 @@ public class JwtFhirClientAuthenticator extends JWTClientAuthenticator {
                 signatureValid = jwt != null;
             } catch (RuntimeException e) {
                 Throwable cause = e.getCause() != null ? e.getCause() : e;
-                throw new RuntimeException("Signature on JWT token failed validation", cause);
+                throw new RuntimeException("Signature on JWT token by client secret failed validation", cause);
             }
             if (!signatureValid) {
-                throw new RuntimeException("Signature on JWT token failed validation");
+                throw new RuntimeException("Signature on JWT token by client secret  failed validation");
             }
+            // According to <a href="http://openid.net/specs/openid-connect-core-1_0.html#ClientAuthentication">OIDC's client authentication spec</a>,
+            // JWT contents and verification in client_secret_jwt is the same as in private_key_jwt
 
             // Allow both "issuer" or "token-endpoint" as audience
             String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
             String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
-                throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
+            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl) && !hasAcceptableAud(token, realm.getName())) {
+                throw new RuntimeException("FHIR Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
             }
 
             if (!token.isActive()) {
                 throw new RuntimeException("Token is not active");
             }
 
-            // KEYCLOAK-2986
+            // KEYCLOAK-2986, token-timeout or token-expiration in keycloak.json might not be used
             int currentTime = Time.currentTime();
             if (token.getExpiration() == 0 && token.getIssuedAt() + 10 < currentTime) {
                 throw new RuntimeException("Token is not active");
@@ -138,8 +140,8 @@ public class JwtFhirClientAuthenticator extends JWTClientAuthenticator {
             SingleUseTokenStoreProvider singleUseCache = context.getSession().getProvider(SingleUseTokenStoreProvider.class);
             int lifespanInSecs = Math.max(token.getExpiration() - currentTime, 10);
             if (singleUseCache.putIfAbsent(token.getId(), lifespanInSecs)) {
-                logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, clientId);
 
+                logger.tracef("Added token '%s' to single-use cache. Lifespan: %d seconds, client: %s", token.getId(), lifespanInSecs, clientId);
             } else {
                 logger.warnf("Token '%s' already used when authenticating client '%s'.", token.getId(), clientId);
                 throw new RuntimeException("Token reuse detected");
@@ -148,8 +150,28 @@ public class JwtFhirClientAuthenticator extends JWTClientAuthenticator {
             context.success();
         } catch (Exception e) {
             ServicesLogger.LOGGER.errorValidatingAssertion(e);
-            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Client authentication with signed JWT failed: " + e.getMessage());
+            Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), "unauthorized_client", "Client authentication with client secret signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
     }
+
+    private boolean hasAcceptableAud(JsonWebToken token, String realmName) {
+        for (String aud : token.getAudience()) {
+            if (aud.contains(realmName) && aud.endsWith("/token")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public String getDisplayType() {
+        return "Signed Jwt with FHIR Client Secret";
+    }
+
 }

@@ -117,7 +117,7 @@ public class JwtFhirClientAuthenticator extends JWTClientAuthenticator {
             // Allow both "issuer" or "token-endpoint" as audience
             String issuerUrl = Urls.realmIssuer(context.getUriInfo().getBaseUri(), realm.getName());
             String tokenUrl = OIDCLoginProtocolService.tokenUrl(context.getUriInfo().getBaseUriBuilder()).build(realm.getName()).toString();
-            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl)) {
+            if (!token.hasAudience(issuerUrl) && !token.hasAudience(tokenUrl) && hasAcceptableAudience(token, realm.getName())) {
                 throw new RuntimeException("Token audience doesn't match domain. Realm issuer is '" + issuerUrl + "' but audience from token is '" + Arrays.asList(token.getAudience()).toString() + "'");
             }
 
@@ -151,5 +151,15 @@ public class JwtFhirClientAuthenticator extends JWTClientAuthenticator {
             Response challengeResponse = ClientAuthUtil.errorResponse(Response.Status.BAD_REQUEST.getStatusCode(), OAuthErrorException.INVALID_CLIENT, "Client authentication with signed JWT failed: " + e.getMessage());
             context.failure(AuthenticationFlowError.INVALID_CLIENT_CREDENTIALS, challengeResponse);
         }
+    }
+
+    private boolean hasAcceptableAudience(JsonWebToken jwt, String realmName) {
+        for (String aud : jwt.getAudience()) {
+            if (aud.contains(realmName) && aud.endsWith("token")) {
+                logger.info("Token has acceptable audience assertion");
+                return true;
+            }
+        }
+        return  false;
     }
 }

@@ -23,12 +23,13 @@ import java.util.Arrays;
 
 public class JWTFhirClientSecretAuthenticator extends JWTClientSecretAuthenticator {
 
-    private static final Logger logger = Logger.getLogger(JWTClientSecretAuthenticator.class);
+    private static final Logger logger = Logger.getLogger(JWTFhirClientSecretAuthenticator.class);
 
     public static final String PROVIDER_ID = "client-secret-jwt";
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
+        logger.info("Authenticating client");
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
 
         String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);

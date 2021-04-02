@@ -1,0 +1,26 @@
+{
+  "realm" : "master",
+  "users" : [ {
+    "id" : "721e5c78-e760-4fb4-aada-0351a1428f78",
+    "createdTimestamp" : 1617027907624,
+    "username" : "deviam",
+    "enabled" : true,
+    "totp" : false,
+    "emailVerified" : false,
+    "credentials" : [ {
+      "id" : "7d94627d-4de6-4ba6-820b-3a31f22599dc",
+      "type" : "password",
+      "createdDate" : 1617027907661,
+      "secretData" : "{\"value\":\"FnMmh+bO3EF1dE6Om3Yr7v+tGZRcDAJpmmm8mthMO2raDx320KRXPdHDka4Lg9G/V+pW2WHFc/sOZp7tgM7aJg==\",\"salt\":\"QR3EmACnUehuKK+39lXw8w==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":27500,\"algorithm\":\"pbkdf2-sha256\",\"additionalParameters\":{}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "uma_authorization", "offline_access", "admin" ],
+    "clientRoles" : {
+      "account" : [ "manage-account", "view-profile" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  } ]
+}

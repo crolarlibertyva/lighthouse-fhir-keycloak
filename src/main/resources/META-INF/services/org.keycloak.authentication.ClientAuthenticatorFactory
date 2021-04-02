@@ -16,6 +16,6 @@
 #
 
 org.keycloak.authentication.authenticators.client.ClientIdAndSecretAuthenticator
-org.fhir.keycloak.client.authenticator.JwtFhirClientAuthenticator
-org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator
+org.keycloak.authentication.authenticators.client.JWTClientAuthenticator
+org.fhir.keycloak.client.authenticator.JWTFhirClientSecretAuthenticator
 org.keycloak.authentication.authenticators.client.X509ClientAuthenticator

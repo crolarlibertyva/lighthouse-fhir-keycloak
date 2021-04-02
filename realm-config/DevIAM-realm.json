@@ -404,7 +404,7 @@
     "surrogateAuthRequired" : false,
     "enabled" : true,
     "alwaysDisplayInConsole" : false,
-    "clientAuthenticatorType" : "client-secret-jwt",
+    "clientAuthenticatorType" : "fhir-client-secret-jwt",
     "secret" : "8cd9xDEpyW5doLvDFKUzYauX43nnRz5sZ8QhnU9n",
     "redirectUris" : [ "http://localhost:8080/*", "http://localhost:7100/*" ],
     "webOrigins" : [ "http://localhost:8080" ],
@@ -1634,7 +1634,7 @@
       "userSetupAllowed" : false,
       "autheticatorFlow" : false
     }, {
-      "authenticator" : "client-secret-jwt",
+      "authenticator" : "fhir-client-secret-jwt",
       "requirement" : "ALTERNATIVE",
       "priority" : 30,
       "userSetupAllowed" : false,

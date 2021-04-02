@@ -25,7 +25,7 @@ public class JWTFhirClientSecretAuthenticator extends JWTClientSecretAuthenticat
 
     private static final Logger logger = Logger.getLogger(JWTFhirClientSecretAuthenticator.class);
 
-    public static final String PROVIDER_ID = "client-secret-jwt";
+    public static final String PROVIDER_ID = "fhir-client-secret-jwt";
 
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
@@ -156,12 +156,22 @@ public class JWTFhirClientSecretAuthenticator extends JWTClientSecretAuthenticat
     }
 
     private boolean hasAcceptableAud(JsonWebToken token, String realmName) {
-        for (String aud: token.getAudience()) {
+        for (String aud : token.getAudience()) {
             if (aud.contains(realmName) && aud.endsWith("/token")) {
                 return true;
             }
         }
-        return  false;
+        return false;
+    }
+
+    @Override
+    public String getId() {
+        return PROVIDER_ID;
+    }
+
+    @Override
+    public String getDisplayType() {
+        return "Signed Jwt with FHIR Client Secret";
     }
 
 }

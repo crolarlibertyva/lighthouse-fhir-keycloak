@@ -21,22 +21,16 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.adapters.AdapterUtils;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.authentication.JWTClientSecretCredentialsProvider;
-import org.keycloak.common.util.KeystoreUtil;
+import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 import org.keycloak.common.util.Time;
 import org.keycloak.crypto.Algorithm;
 import org.keycloak.crypto.JavaAlgorithm;
-import org.keycloak.jose.jwk.JWK;
-import org.keycloak.jose.jwk.JWKBuilder;
 import org.keycloak.jose.jws.JWSBuilder;
 import org.keycloak.representations.JsonWebToken;
-import org.keycloak.adapters.authentication.ClientCredentialsProvider;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.KeyPair;
-import java.security.PublicKey;
 import java.util.Map;
 
 /**
@@ -47,9 +41,9 @@ import java.util.Map;
  */
 public class JWTFhirClientSecretCredentialsProvider implements ClientCredentialsProvider {
 
-    private static final Logger logger = Logger.getLogger(JWTClientSecretCredentialsProvider.class);
+    private static final Logger logger = Logger.getLogger(JWTFhirClientSecretCredentialsProvider.class);
 
-    public static final String PROVIDER_ID = "secret-jwt";
+    public static final String PROVIDER_ID = "fhir-secret-jwt";
 
     private SecretKey clientSecret;
 

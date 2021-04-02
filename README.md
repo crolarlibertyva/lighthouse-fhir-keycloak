@@ -1,9 +1,11 @@
-This project is an extension to keycloak in order to enable complience
+This project is an extension to keycloak
+in order to enable compliance
 with https://hl7.org/fhir/uv/bulkdata/authorization/index.html
 
 
 ## Quick Start
-Locally deploy the extended keycloak instance   by running:
+Locally deploy the extended keycloak instance
+by running:
 
     ./mvnw clean package
     docker-compose up -d

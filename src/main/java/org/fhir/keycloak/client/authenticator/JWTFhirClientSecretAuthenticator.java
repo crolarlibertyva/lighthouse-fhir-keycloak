@@ -4,8 +4,10 @@ import org.jboss.logging.Logger;
 import org.keycloak.OAuth2Constants;
 import org.keycloak.authentication.AuthenticationFlowError;
 import org.keycloak.authentication.ClientAuthenticationFlowContext;
+import org.keycloak.authentication.ClientAuthenticator;
 import org.keycloak.authentication.authenticators.client.ClientAuthUtil;
 import org.keycloak.authentication.authenticators.client.JWTClientSecretAuthenticator;
+import org.keycloak.common.util.SystemEnvProperties;
 import org.keycloak.common.util.Time;
 import org.keycloak.jose.jws.JWSInput;
 import org.keycloak.models.ClientModel;
@@ -27,9 +29,9 @@ public class JWTFhirClientSecretAuthenticator extends JWTClientSecretAuthenticat
 
     public static final String PROVIDER_ID = "fhir-client-secret-jwt";
 
+
     @Override
     public void authenticateClient(ClientAuthenticationFlowContext context) {
-        logger.info("Authenticating client");
         MultivaluedMap<String, String> params = context.getHttpRequest().getDecodedFormParameters();
 
         String clientAssertionType = params.getFirst(OAuth2Constants.CLIENT_ASSERTION_TYPE);
@@ -156,12 +158,14 @@ public class JWTFhirClientSecretAuthenticator extends JWTClientSecretAuthenticat
     }
 
     private boolean hasAcceptableAud(JsonWebToken token, String realmName) {
-        for (String aud : token.getAudience()) {
-            if (aud.contains(realmName) && aud.endsWith("/token")) {
-                return true;
-            }
+        String fhirAudIssuer = System.getenv("FHIR_AUD_ISSUER");
+        if (fhirAudIssuer == null || fhirAudIssuer.isEmpty() || fhirAudIssuer.isBlank()) {
+            return false;
+        } else {
+            return Arrays.stream(token.getAudience())
+                    .distinct()
+                    .anyMatch(aud -> aud.equals(fhirAudIssuer + "/token"));
         }
-        return false;
     }
 
     @Override

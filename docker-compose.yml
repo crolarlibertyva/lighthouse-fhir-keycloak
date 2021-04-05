@@ -10,6 +10,7 @@ services:
     environment:
       - KEYCLOAK_USER=deviam
       - KEYCLOAK_PASSWORD=deviam
+      - FHIR_AUD_ISSUER=http://localhost:7100/oauth/fhir1/v1
     ports:
       - 9080:9080
       - 9443:9443
